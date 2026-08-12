@@ -1,15 +1,13 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useSyncExternalStore} from 'react';
 import {useDarkMode} from './DarkModeProvider';
+
+const subscribe = () => () => {};
 
 export default function Header() {
     const {theme, setTheme} = useDarkMode();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
     const handleThemeToggle = () => {
         if (theme === 'light') {
