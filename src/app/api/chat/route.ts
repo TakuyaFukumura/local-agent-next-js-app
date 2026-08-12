@@ -1,15 +1,54 @@
 import {createAgent} from '../../../../lib/agent';
-import type {AgentEvent} from '@mariozechner/pi-agent-core';
+import type {AgentEvent} from '@earendil-works/pi-agent-core';
 
 /**
  * チャット用 SSE エンドポイント
  * POST /api/chat
  */
 export async function POST(request: Request) {
-    const body = await request.json();
-    const userMessage: string = body.message ?? '';
+    const requestId = crypto.randomUUID();
+    console.info('[api/chat] request received', {requestId});
+
+    let body: unknown;
+    try {
+        body = await request.json();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn('[api/chat] invalid JSON body', {requestId, error: message});
+        return new Response(JSON.stringify({error: '不正な JSON です'}), {
+            status: 400,
+            headers: {'Content-Type': 'application/json'},
+        });
+    }
+
+    const apiToken = process.env.CHAT_API_TOKEN;
+    if (process.env.NODE_ENV === 'production') {
+        if (!apiToken) {
+            console.error('[api/chat] CHAT_API_TOKEN is not configured', {requestId});
+            return new Response(JSON.stringify({error: 'サーバー設定エラーです'}), {
+                status: 503,
+                headers: {'Content-Type': 'application/json'},
+            });
+        }
+
+        const authHeader = request.headers.get('authorization');
+        const expected = 'Bearer ' + apiToken;
+        if (authHeader !== expected) {
+            console.warn('[api/chat] unauthorized request', {requestId});
+            return new Response(JSON.stringify({error: '認証に失敗しました'}), {
+                status: 401,
+                headers: {'Content-Type': 'application/json'},
+            });
+        }
+    }
+
+    const parsedBody =
+        typeof body === 'object' && body !== null ? (body as {message?: unknown}) : {};
+    const userMessage: string =
+        typeof parsedBody.message === 'string' ? parsedBody.message : '';
 
     if (!userMessage.trim()) {
+        console.warn('[api/chat] empty message', {requestId});
         return new Response(JSON.stringify({error: 'メッセージが空です'}), {
             status: 400,
             headers: {'Content-Type': 'application/json'},
@@ -25,6 +64,7 @@ export async function POST(request: Request) {
     };
 
     (async () => {
+        console.info('[api/chat] stream started', {requestId});
         const agent = createAgent();
 
         const unsubscribe = agent.subscribe(async (event: AgentEvent) => {
@@ -53,11 +93,13 @@ export async function POST(request: Request) {
             await agent.prompt(userMessage);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
+            console.error('[api/chat] agent prompt failed', {requestId, error: message});
             await sendEvent({type: 'error', message});
         } finally {
             unsubscribe();
             await sendEvent({type: 'done'});
             await writer.close();
+            console.info('[api/chat] stream closed', {requestId});
         }
     })();
 

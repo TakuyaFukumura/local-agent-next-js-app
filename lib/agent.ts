@@ -1,11 +1,29 @@
-import {Agent, type AgentTool} from '@mariozechner/pi-agent-core';
-import {streamSimple, Type} from '@mariozechner/pi-ai';
-import type {Model} from '@mariozechner/pi-ai';
+import {Agent, type AgentTool} from '@earendil-works/pi-agent-core';
+import {streamSimple, Type} from '@earendil-works/pi-ai/compat';
+import type {Model} from '@earendil-works/pi-ai/compat';
 import fs from 'fs';
-import {exec} from 'child_process';
+import path from 'path';
+import {execFile} from 'child_process';
 import {promisify} from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+const workspaceRoot = path.resolve(process.env.AGENT_WORKSPACE_ROOT ?? process.cwd());
+const commandsEnabled = process.env.AGENT_ENABLE_COMMANDS === 'true';
+const allowedCommands = new Set(
+    (process.env.AGENT_ALLOWED_COMMANDS ?? '')
+        .split(',')
+        .map((command) => command.trim())
+        .filter(Boolean)
+);
+
+function resolveWorkspacePath(inputPath: string): string {
+    const resolvedPath = path.resolve(workspaceRoot, inputPath);
+    const relativePath = path.relative(workspaceRoot, resolvedPath);
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+        throw new Error('許可されたディレクトリ外のパスです');
+    }
+    return resolvedPath;
+}
 
 // ファイル読み込みツールのパラメータスキーマ
 const readFileParams = Type.Object({
@@ -45,13 +63,16 @@ const readFileTool: AgentTool<typeof readFileParams> = {
     parameters: readFileParams,
     execute: async (_toolCallId, params) => {
         try {
-            const content = fs.readFileSync(params.path, 'utf-8');
+            const safePath = resolveWorkspacePath(params.path);
+            console.info('[agent.readFile] start', {path: safePath});
+            const content = fs.readFileSync(safePath, 'utf-8');
             return {
                 content: [{type: 'text', text: content}],
-                details: {path: params.path},
+                details: {path: safePath},
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
+            console.error('[agent.readFile] failed', {path: params.path, error: message});
             return {
                 content: [{type: 'text', text: `エラー: ${message}`}],
                 details: {path: params.path, error: message},
@@ -68,13 +89,16 @@ const writeFileTool: AgentTool<typeof writeFileParams> = {
     parameters: writeFileParams,
     execute: async (_toolCallId, params) => {
         try {
-            fs.writeFileSync(params.path, params.content, 'utf-8');
+            const safePath = resolveWorkspacePath(params.path);
+            console.info('[agent.writeFile] start', {path: safePath});
+            fs.writeFileSync(safePath, params.content, 'utf-8');
             return {
-                content: [{type: 'text', text: `ファイルを書き込みました: ${params.path}`}],
-                details: {path: params.path},
+                content: [{type: 'text', text: `ファイルを書き込みました: ${safePath}`}],
+                details: {path: safePath},
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
+            console.error('[agent.writeFile] failed', {path: params.path, error: message});
             return {
                 content: [{type: 'text', text: `エラー: ${message}`}],
                 details: {path: params.path, error: message},
@@ -91,14 +115,42 @@ const runCommandTool: AgentTool<typeof runCommandParams> = {
     parameters: runCommandParams,
     execute: async (_toolCallId, params) => {
         try {
-            const {stdout, stderr} = await execAsync(params.command, {timeout: 30000});
+            if (!commandsEnabled) {
+                throw new Error(
+                    'runCommand は無効化されています。AGENT_ENABLE_COMMANDS=true で有効化してください。'
+                );
+            }
+
+            const commandParts = params.command.trim().split(/\s+/);
+            const commandName = commandParts[0];
+            const commandArgs = commandParts.slice(1);
+
+            if (!commandName) {
+                throw new Error('コマンドが空です');
+            }
+            if (!allowedCommands.has(commandName)) {
+                throw new Error(`許可されていないコマンドです: ${commandName}`);
+            }
+
+            console.info('[agent.runCommand] start', {
+                command: commandName,
+                args: commandArgs,
+                cwd: workspaceRoot,
+            });
+            const {stdout, stderr} = await execFileAsync(commandName, commandArgs, {
+                timeout: 30000,
+                cwd: workspaceRoot,
+                shell: false,
+                maxBuffer: 1024 * 1024,
+            });
             const output = stdout || stderr || '（出力なし）';
             return {
                 content: [{type: 'text', text: output}],
-                details: {command: params.command},
+                details: {command: commandName, args: commandArgs},
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
+            console.error('[agent.runCommand] failed', {command: params.command, error: message});
             return {
                 content: [{type: 'text', text: `エラー: ${message}`}],
                 details: {command: params.command, error: message},

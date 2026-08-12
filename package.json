@@ -12,7 +12,8 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@mariozechner/pi-agent-core": "^0.73.1",
+    "@earendil-works/pi-agent-core": "^0.84.1",
+    "@earendil-works/pi-ai": "^0.84.1",
     "@types/better-sqlite3": "^9.6.0",
     "better-sqlite3": "^13.0.3",
     "next": "16.3.0",

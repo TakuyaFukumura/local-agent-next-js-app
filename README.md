@@ -10,7 +10,7 @@ Next.js + Ollama（ローカル LLM）を使った AI エージェントアプ�
 - **TypeScript** - 型安全性
 - **Tailwind CSS 4** - スタイリング
 - **SQLite** - データベース（better-sqlite3）
-- **@mariozechner/pi-agent-core** - AI エージェント基盤（Pi Engine）
+- **@earendil-works/pi-agent-core** - AI エージェント基盤（Pi Engine）
 - **Ollama（gemma2:2b）** - ローカル LLM（OpenAI 互換 API）
 - **ESLint** - コード品質管理
 
@@ -28,7 +28,7 @@ Next.js + Ollama（ローカル LLM）を使った AI エージェントアプ�
 
 ### 前提条件
 
-- Node.js 20.x 以上
+- Node.js 22.x 以上
 - npm、yarn、または pnpm
 - [Ollama](https://ollama.com/) がインストール済みであること
 
@@ -82,6 +82,13 @@ pnpm dev
 ```
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開いてアプリケーションを確認してください。
+
+### 環境変数（セキュリティ設定）
+
+- `CHAT_API_TOKEN`: 本番環境で `/api/chat` を利用する際に必須の認証トークン
+- `AGENT_WORKSPACE_ROOT`: `readFile` / `writeFile` で操作を許可するディレクトリ（未指定時はプロジェクトルート）
+- `AGENT_ENABLE_COMMANDS`: `true` のときのみ `runCommand` を有効化
+- `AGENT_ALLOWED_COMMANDS`: 実行を許可するコマンド名のカンマ区切り（例: `ls,cat,pwd`）
 
 ### ビルドと本番デプロイ
 
@@ -239,4 +246,3 @@ CIでは以下のチェックが行われます：
 ```bash
 npm run dev -- --port 3001
 ```
-
