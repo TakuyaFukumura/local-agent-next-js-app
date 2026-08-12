@@ -1,9 +1,13 @@
 'use client';
 
+import {useSyncExternalStore} from 'react';
 import {useDarkMode} from './DarkModeProvider';
+
+const subscribe = () => () => {};
 
 export default function Header() {
     const {theme, setTheme} = useDarkMode();
+    const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
     const handleThemeToggle = () => {
         if (theme === 'light') {
@@ -47,10 +51,10 @@ export default function Header() {
                             className="flex items-center gap-2 px-3 py-2 text-sm font-medium
                             text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700
                             rounded-lg transition-colors duration-200"
-                            title={`現在: ${getThemeLabel()}`}
+                            title={mounted ? `現在: ${getThemeLabel()}` : undefined}
                         >
-                            <span className="text-lg">{getThemeIcon()}</span>
-                            <span className="hidden sm:inline">{getThemeLabel()}</span>
+                            <span className="text-lg">{mounted ? getThemeIcon() : null}</span>
+                            <span className="hidden sm:inline">{mounted ? getThemeLabel() : null}</span>
                         </button>
                     </div>
                 </div>
@@ -58,3 +62,4 @@ export default function Header() {
         </header>
     );
 }
+

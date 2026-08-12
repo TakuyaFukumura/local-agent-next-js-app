@@ -7,9 +7,10 @@
 
 ## [Unreleased]
 
-### 変更
+### 修正
 
-- ここに書く
+- `Header` コンポーネントでテーマアイコン・ラベルの SSR/クライアント間のハイドレーションミスマッチを解消 ([#10](https://github.com/TakuyaFukumura/local-agent-next-js-app/issues/10))
+  - `mounted` ステートを導入し、クライアントマウント後のみテーマ依存の UI を描画するよう変更
 
 ## [0.2.0] - 2026-08-12
 
