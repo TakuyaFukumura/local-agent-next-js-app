@@ -1,33 +1,44 @@
 # local-agent-next-js-app
 
-Next.jsを使ったシンプルな「Hello, world.」アプリケーションです。
-このプロジェクトは、SQLiteデータベースからメッセージを取得して表示する基本的な機能を提供します。
+Next.js + Ollama（ローカル LLM）を使った AI エージェントアプリケーションです。
+ブラウザのチャット UI からローカル LLM（gemma2:2b）とリアルタイムに対話でき、ファイル操作やコマンド実行などのツール呼び出し（Tool Calling）機能も備えています。
 
 ## 技術スタック
 
-- **Next.js 16.1.6** - React フレームワーク（App Routerを使用）
-- **React 19.2.4** - ユーザーインターフェース構築
+- **Next.js 16** - React フレームワーク（App Router を使用）
+- **React 19** - ユーザーインターフェース構築
 - **TypeScript** - 型安全性
 - **Tailwind CSS 4** - スタイリング
 - **SQLite** - データベース（better-sqlite3）
+- **@earendil-works/pi-agent-core** - AI エージェント基盤（Pi Engine）
+- **Ollama（gemma2:2b）** - ローカル LLM（OpenAI 互換 API）
 - **ESLint** - コード品質管理
 
 ## 機能
 
-- SQLiteデータベースから「Hello, world.」メッセージを取得
+- ローカル LLM（Ollama: gemma2:2b）と対話できる AI エージェント
+- SSE（Server-Sent Events）によるリアルタイムストリーミング表示
+- ファイル読み込み・書き込み・コマンド実行のツール呼び出し（Tool Calling）
+- チャット履歴の時系列表示とユーザー/エージェント発言の視覚的区別
 - レスポンシブデザイン対応
 - ダークモード対応（手動切替機能付き）
-    - ライトモードとダークモードの2つのモードを手動で切り替え可能
-    - ユーザーの選択はローカルストレージに保存され、ページ再読み込み時も維持されます
-- TypeScriptによる型安全性
-- モダンなUI/UXデザイン
+- TypeScript による型安全性
 
 ## 始め方
 
 ### 前提条件
 
-- Node.js 20.x以上
-- npm、yarn、またはpnpm
+- Node.js 22.x 以上
+- npm、yarn、または pnpm
+- [Ollama](https://ollama.com/) がインストール済みであること
+
+### Ollama のセットアップ
+
+```bash
+# モデルのダウンロードと起動
+ollama pull gemma2:2b
+ollama run gemma2:2b
+```
 
 ### インストール
 
@@ -70,8 +81,14 @@ yarn dev
 pnpm dev
 ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) を開いて
-アプリケーションを確認してください。
+ブラウザで [http://localhost:3000](http://localhost:3000) を開いてアプリケーションを確認してください。
+
+### 環境変数（セキュリティ設定）
+
+- `CHAT_API_TOKEN`: 本番環境で `/api/chat` を利用する際に必須の認証トークン
+- `AGENT_WORKSPACE_ROOT`: `readFile` / `writeFile` で操作を許可するディレクトリ（未指定時はプロジェクトルート）
+- `AGENT_ENABLE_COMMANDS`: `true` のときのみ `runCommand` を有効化
+- `AGENT_ALLOWED_COMMANDS`: 実行を許可するコマンド名のカンマ区切り（例: `ls,cat,pwd`）
 
 ### ビルドと本番デプロイ
 
@@ -85,37 +102,21 @@ npm run build
 npm start
 ```
 
-または
-
-```bash
-yarn build
-```
-
-```bash
-yarn start
-```
-
-または
-
-```bash
-pnpm build
-```
-
-```bash
-pnpm start
-```
-
 ## プロジェクト構造
 
 ```
 ├── lib/
+│   ├── agent.ts             # Pi Engine 初期化・エージェントロジック
 │   └── database.ts          # SQLiteデータベース接続・操作
 ├── src/
 │   └── app/
 │       ├── api/
+│       │   ├── chat/
+│       │   │   └── route.ts # チャット用 SSE エンドポイント
 │       │   └── message/
-│       │       └── route.ts # APIエンドポイント
+│       │       └── route.ts # メッセージ API エンドポイント
 │       ├── components/      # Reactコンポーネント
+│       │   ├── ChatWindow.tsx        # チャット画面コンポーネント
 │       │   ├── DarkModeProvider.tsx  # ダークモードProvider
 │       │   └── Header.tsx   # ヘッダーコンポーネント
 │       ├── globals.css      # グローバルスタイル
@@ -124,11 +125,31 @@ pnpm start
 ├── data/                    # SQLiteデータベースファイル（自動生成）
 ├── package.json
 ├── next.config.ts
-├── tailwind.config.ts
 └── tsconfig.json
 ```
 
 ## API エンドポイント
+
+### POST /api/chat
+
+AI エージェントにメッセージを送信し、SSE ストリームで応答を受け取ります。
+
+**リクエスト:**
+
+```json
+{
+  "message": "ユーザーからのメッセージ"
+}
+```
+
+**レスポンス（SSE ストリーム）:**
+
+```
+data: {"type": "text", "content": "応答テキストの一部"}
+data: {"type": "tool_call", "name": "readFile", "args": {"path": "..."}}
+data: {"type": "tool_result", "name": "readFile", "result": "ファイル内容", "isError": false}
+data: {"type": "done"}
+```
 
 ### GET /api/message
 
@@ -142,28 +163,6 @@ pnpm start
 }
 ```
 
-## データベース
-
-SQLiteデータベースは初回起動時に自動的に作成されます：
-
-- データベースファイル: `data/app.db`
-- テーブル: `messages`
-    - `id`: 自動増分プライマリーキー
-    - `content`: メッセージ内容
-    - `created_at`: 作成日時
-
-## カスタマイズ
-
-### メッセージの変更
-
-データベース内のメッセージを変更したい場合は、
-SQLiteクライアントを使用して `data/app.db` ファイル内の `messages` テーブルを編集してください。
-
-### スタイルの変更
-
-スタイルは Tailwind CSS を使用しています。
-`src/app/page.tsx` ファイル内のクラス名を変更することで、外観をカスタマイズできます。
-
 ## 開発
 
 ### テスト
@@ -174,18 +173,6 @@ SQLiteクライアントを使用して `data/app.db` ファイル内の `messag
 
 ```bash
 npm test
-```
-
-または
-
-```bash
-yarn test
-```
-
-または
-
-```bash
-pnpm test
 ```
 
 #### テストの監視モード
@@ -203,37 +190,15 @@ npm run test:coverage
 #### テストファイルの構成
 
 - `__tests__/lib/database.test.ts`: データベース機能のテスト
+- `__tests__/src/app/components/ChatWindow.test.tsx`: チャット UI コンポーネントのテスト
 - `__tests__/src/app/components/DarkModeProvider.test.tsx`: ダークモードProvider のテスト
 - `__tests__/src/app/components/Header.test.tsx`: ヘッダーコンポーネントのテスト
-
-#### テストの特徴
-
-- **データベーステスト**: SQLiteを使用した実際のデータベース操作のテスト
-- **Reactコンポーネントテスト**: React Testing Library を使用したコンポーネントのレンダリングとインタラクションのテスト
-- **モッキング**: localStorage や外部依存関係のモック
-- **カバレッジ**: コードカバレッジの測定と報告
 
 ### リンティング
 
 ```bash
 npm run lint
 ```
-
-または
-
-```bash
-yarn lint
-```
-
-または
-
-```bash
-pnpm lint
-```
-
-### 型チェック
-
-TypeScriptの型チェックは、ビルド時またはIDEで自動的に実行されます。
 
 ## CI/CD
 
@@ -261,9 +226,13 @@ CIでは以下のチェックが行われます：
 
 - GitHub Actionsおよびnpmパッケージの依存関係は**月次（月曜日 09:00 JST）**で自動チェック・更新されます。
 - 更新内容は自動でプルリクエストとして作成されます。
-- 詳細な設定は `.github/dependabot.yml` を参照してください。
 
 ## トラブルシューティング
+
+### Ollama が起動していない場合
+
+- Ollama を起動してください: `ollama run gemma2:2b`
+- API エンドポイント `http://localhost:11434/v1` が利用可能かを確認してください
 
 ### データベース関連のエラー
 
