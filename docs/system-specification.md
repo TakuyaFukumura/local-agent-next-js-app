@@ -267,9 +267,9 @@ Jest 設定は `jest.config.mjs` にあり、主に `src/` と `lib/` 配下を�
 
 ## 12. 参考にすべき重要ファイル
 
-- `/home/runner/work/local-agent-next-js-app/local-agent-next-js-app/src/app/components/ChatWindow.tsx`
-- `/home/runner/work/local-agent-next-js-app/local-agent-next-js-app/src/app/api/chat/route.ts`
-- `/home/runner/work/local-agent-next-js-app/local-agent-next-js-app/lib/agent.ts`
-- `/home/runner/work/local-agent-next-js-app/local-agent-next-js-app/lib/database.ts`
-- `/home/runner/work/local-agent-next-js-app/local-agent-next-js-app/src/app/components/DarkModeProvider.tsx`
+- `src/app/components/ChatWindow.tsx`
+- `src/app/api/chat/route.ts`
+- `lib/agent.ts`
+- `lib/database.ts`
+- `src/app/components/DarkModeProvider.tsx`
 - `/home/runner/work/local-agent-next-js-app/local-agent-next-js-app/src/app/components/Header.tsx`
