@@ -3,7 +3,8 @@
 import {useSyncExternalStore} from 'react';
 import {useDarkMode} from './DarkModeProvider';
 
-const subscribe = () => () => {};
+const subscribe = () => () => {
+};
 
 export default function Header() {
     const {theme, setTheme} = useDarkMode();

@@ -1,6 +1,6 @@
 import {Agent, type AgentTool} from '@earendil-works/pi-agent-core';
-import {streamSimple, Type} from '@earendil-works/pi-ai/compat';
 import type {Model} from '@earendil-works/pi-ai/compat';
+import {streamSimple, Type} from '@earendil-works/pi-ai/compat';
 import fs from 'fs';
 import path from 'path';
 import {execFile} from 'child_process';

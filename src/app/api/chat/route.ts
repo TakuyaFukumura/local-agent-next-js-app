@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     const parsedBody =
-        typeof body === 'object' && body !== null ? (body as {message?: unknown}) : {};
+        typeof body === 'object' && body !== null ? (body as { message?: unknown }) : {};
     const userMessage: string =
         typeof parsedBody.message === 'string' ? parsedBody.message : '';
 
