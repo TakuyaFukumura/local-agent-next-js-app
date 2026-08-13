@@ -1,13 +1,13 @@
 'use client';
 
-import {useState, useRef, useEffect, type KeyboardEvent} from 'react';
+import {type KeyboardEvent, useEffect, useRef, useState} from 'react';
 
 /** チャットメッセージの型 */
 export interface ChatMessage {
     id: string;
     role: 'user' | 'assistant';
     content: string;
-    toolCalls?: {name: string; args: unknown}[];
+    toolCalls?: { name: string; args: unknown }[];
 }
 
 /** SSE イベントの型 */
@@ -201,7 +201,7 @@ export default function ChatWindow() {
                         </div>
                     </div>
                 ))}
-                <div ref={bottomRef} />
+                <div ref={bottomRef}/>
             </div>
 
             {/* 入力エリア */}
