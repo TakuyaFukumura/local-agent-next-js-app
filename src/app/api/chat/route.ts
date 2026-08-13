@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         await writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
     };
 
-    (async () => {
+    await (async () => {
         console.info('[api/chat] stream started', {requestId});
         const agent = createAgent();
 
