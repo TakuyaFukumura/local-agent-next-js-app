@@ -10,6 +10,7 @@
 ### 修正
 
 - `Header` コンポーネントでテーマアイコン・ラベルの SSR/クライアント間のハイドレーションミスマッチを解消 ([#10](https://github.com/TakuyaFukumura/local-agent-next-js-app/issues/10))
+- `next.config.ts` に `serverExternalPackages` を追加し、`@earendil-works/pi-ai` および `@earendil-works/pi-agent-core` をバンドル対象外にすることで非同期エラー（`Cannot find module as expression is too dynamic`）を解消 ([#12](https://github.com/TakuyaFukumura/local-agent-next-js-app/issues/12))
   - `mounted` ステートを導入し、クライアントマウント後のみテーマ依存の UI を描画するよう変更
 
 ## [0.2.0] - 2026-08-12
