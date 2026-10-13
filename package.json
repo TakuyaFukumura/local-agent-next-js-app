@@ -18,7 +18,7 @@
     "better-sqlite3": "^13.0.3",
     "next": "16.3.8",
     "react": "19.3.0",
-    "react-dom": "19.2.8"
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -28,7 +28,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^26",
     "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.3.8",
     "jest": "^30.5.2",
