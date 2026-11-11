@@ -1,6 +1,7 @@
 import {Agent, type AgentTool} from '@earendil-works/pi-agent-core';
 import type {Model} from '@earendil-works/pi-ai/compat';
-import {streamSimple, Type} from '@earendil-works/pi-ai/compat';
+import {streamSimple} from '@earendil-works/pi-ai/compat';
+import {obj, str} from '@earendil-works/pi-schema';
 import fs from 'fs';
 import path from 'path';
 import {execFile} from 'child_process';
@@ -26,19 +27,19 @@ function resolveWorkspacePath(inputPath: string): string {
 }
 
 // ファイル読み込みツールのパラメータスキーマ
-const readFileParams = Type.Object({
-    path: Type.String({description: 'ファイルパス'}),
+const readFileParams = obj({
+    path: str({description: 'ファイルパス'}),
 });
 
 // ファイル書き込みツールのパラメータスキーマ
-const writeFileParams = Type.Object({
-    path: Type.String({description: 'ファイルパス'}),
-    content: Type.String({description: '書き込む内容'}),
+const writeFileParams = obj({
+    path: str({description: 'ファイルパス'}),
+    content: str({description: '書き込む内容'}),
 });
 
 // コマンド実行ツールのパラメータスキーマ
-const runCommandParams = Type.Object({
-    command: Type.String({description: '実行するシェルコマンド'}),
+const runCommandParams = obj({
+    command: str({description: '実行するシェルコマンド'}),
 });
 
 // Ollama の OpenAI 互換 API を使用するモデル定義
